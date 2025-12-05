@@ -1,0 +1,23 @@
+syntax = "proto3";
+
+package MyRPC;
+
+message RPCResponseError {
+    enum ErrorCode {
+        SUCCESS            = 0;
+        SERVICE_NOT_FOUND  = 1;        // 服务未注册
+        METHOD_NOT_FOUND   = 2;        // 方法未定义
+        PARSE_ERROR        = 3;        // 数据解析错误
+        INVALID_ARGUMENT   = 4;        // 参数无效
+        INTERNAL_ERROR     = 5;        // 内部错误
+    }
+    int32 error_code = 1;
+    bytes error_message = 2;
+}
+
+
+message RPCResponseWrapper {
+    bool success = 1;
+    RPCResponseError error = 2;
+    bytes data = 3; // 用来存放远程函数调用返回的response
+}

@@ -1,0 +1,30 @@
+syntax = "proto3";
+
+option cc_generic_services = true;
+
+package RPCTest;
+
+message Result {
+    uint32 errcode = 1;
+    bytes errmsg = 2;
+}
+
+message UserInfo {
+    bytes name = 1;
+    bytes sex = 2;
+    uint32 age = 3;
+}
+
+message GetFriendListRequest {
+    uint32 id = 1;
+}
+
+message GetFriendListResponse {
+    Result result = 1;
+    bool success = 2;
+    repeated UserInfo userInfo = 3;
+}
+
+service FriendServiceRpc {
+    rpc GetFriendList (GetFriendListRequest) returns (GetFriendListResponse);
+}
