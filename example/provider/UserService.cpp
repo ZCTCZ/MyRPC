@@ -4,8 +4,6 @@
 bool UserService::Register(const std::string &name, const std::string &pwd)
 {
     // 具体的注册业务
-    std::cout << "local service: Register" << std::endl;
-    std::cout << "name: " << name << "\npassword: " << pwd << std::endl;
     return true;
 }
 
@@ -13,8 +11,6 @@ bool UserService::Register(const std::string &name, const std::string &pwd)
 bool UserService::Login(const std::string &name, const std::string &pwd)
 {
     // 具体的登录业务
-    std::cout << "local service: Login" << std::endl;
-    std::cout << "name: " << name << " \npassword:" << pwd << std::endl;
     return true;
 }
 

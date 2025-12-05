@@ -2,6 +2,9 @@
 #include "FriendService.h"
 #include "RPCApplication.h"
 #include "RPCProvider.h"
+#include "Log.h"
+#include "AsyncLogging.h"
+
 
 int main(int argc, char **argv)
 {
@@ -18,6 +21,13 @@ int main(int argc, char **argv)
     // 注册 FriendService 服务
     FriendService friendService;
     provider.NotifyService(&friendService);
+
+    // 定义异步日志对象
+    AsyncLogging* asyncLog = AsyncLogging::getInstance();
+    asyncLog->start(); // 启动异步日志系统
+
+    // 设置日志输出路径
+    Log::SetOutputTarget(Log::FILE, "MyRPCLog");
 
     // 启动一个 RPC 服务节点，Run() 函数调用之后，进程进入阻塞状态，等待远程的 RPC 调用请求
     provider.Run();

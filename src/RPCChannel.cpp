@@ -3,6 +3,7 @@
 #include "Response.pb.h"
 #include "RPCApplication.h"
 #include "ZooKeeperUtil.h"
+#include "Log.h"
 #include <string>
 #include <arpa/inet.h>
 #include <errno.h>
@@ -29,6 +30,7 @@ void RPCChannel::CallMethod(const google::protobuf::MethodDescriptor *method,
     if (!request->SerializeToString(&requestStr))
     {
         // 输出日志
+        LOG(Log::error) << "SerializeToString() err";
         controller->SetFailed("SerializeToString() err");
         return ;
     }
@@ -47,6 +49,7 @@ void RPCChannel::CallMethod(const google::protobuf::MethodDescriptor *method,
     if (!Header.SerializeToString(&headerStr))
     {
         // 输出日志
+        LOG(Log::error) << "SerializeToString() err";
         controller->SetFailed("SerializeToString() err");
         return ;
     }
@@ -76,7 +79,8 @@ void RPCChannel::SendToServer(const std::string& serviceName, const std::string&
     if (-1 == fd)
     {
         // 输出日志
-        controller->SetFailed("send err");
+        LOG(Log::error) << "send() err";
+        controller->SetFailed("send() err");
         return ;
     }
 
@@ -92,7 +96,9 @@ void RPCChannel::SendToServer(const std::string& serviceName, const std::string&
     if (data.empty()) // 指定路径的结点不存在，即未注册所指定的服务或者方法 
     {
         // 输出日志
-        controller->SetFailed(path + " Not Exit In ZooKeeperServer");
+        std::string msg(path + " Not Exit In ZooKeeperServer");
+        LOG(Log::error) << msg;
+        controller->SetFailed(msg);
         return ;
     }
 
@@ -100,7 +106,9 @@ void RPCChannel::SendToServer(const std::string& serviceName, const std::string&
     if (pos == std::string::npos)
     {
         // 输出日志
-        controller->SetFailed(path + " Is Invalid");
+        std::string msg(path + " Is Invalid");
+        LOG(Log::error) << msg;
+        controller->SetFailed(msg);
         return ;
     }
 
@@ -112,6 +120,7 @@ void RPCChannel::SendToServer(const std::string& serviceName, const std::string&
     if (-1 == inet_pton(AF_INET, ip.data(), &servaddr.sin_addr.s_addr))
     {
         // 输出日志
+        LOG(Log::error) << "inet_pton() err";
         controller->SetFailed("inet_pton() err");
         return ;
     }
@@ -120,6 +129,7 @@ void RPCChannel::SendToServer(const std::string& serviceName, const std::string&
     if (-1 == connect(fd, (struct sockaddr*)&servaddr, sizeof(servaddr)))
     {
         // 输出日志
+        LOG(Log::error) << "connect() err";
         controller->SetFailed("connect() err");
         return ;
     }
@@ -136,6 +146,7 @@ void RPCChannel::SendToServer(const std::string& serviceName, const std::string&
     if (-1 == send(fd, str.data(), str.size(), 0))
     {
         // 输出日志
+        LOG(Log::error) << "send() err";
         controller->SetFailed("send() err");
         return ;
     }
@@ -146,12 +157,14 @@ void RPCChannel::SendToServer(const std::string& serviceName, const std::string&
     if (-1 == recvLen)
     {
         // 输出日志
+        LOG(Log::error) << "recv() err";
         controller->SetFailed("recv() err");
     }
     else if (0 == recvLen)
     {
         // 输出日志
-        controller->SetFailed("连接异常断开");
+        LOG(Log::error) << "对端连接异常断开";
+        controller->SetFailed("对端连接异常断开");
     }
     else
     {

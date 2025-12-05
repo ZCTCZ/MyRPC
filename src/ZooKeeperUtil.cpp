@@ -1,7 +1,7 @@
 #include "ZooKeeperUtil.h"
 #include "RPCApplication.h"
+#include "Log.h"
 
-#include <iostream>
 #include <semaphore.h>
 
 ZkClient::ZkClient()
@@ -61,7 +61,7 @@ void ZkClient::Start()
     zhandle_t* pZhandle = zookeeper_init(host.data(), watcher, 30000, nullptr, (void*)&isReady, 0);
     if (pZhandle == nullptr) // 初始化句柄失败
     {
-        std::cerr << "zookeeper_init() err" << std::endl;
+        LOG(Log::error) << "zookeeper_init() err";
         exit(EXIT_FAILURE);
     }
 
@@ -69,7 +69,7 @@ void ZkClient::Start()
     sem_wait(&isReady);
     
     m_zhandle.reset(pZhandle);
-    std::cout << "Connect to zkServer Successfully"  << std::endl;
+    LOG(Log::info) << "Connect to zkServer Successfully";
 }
 
 void ZkClient::Create(const char *path, const char *data, int dataLen, int state)
@@ -92,11 +92,11 @@ void ZkClient::Create(const char *path, const char *data, int dataLen, int state
         int res = zoo_create(m_zhandle.get(), path, data, dataLen, &ZOO_OPEN_ACL_UNSAFE, state, path_buffer, bufferLen);
         if (res == ZOK)
         {
-            std::cout << "Create New ZNode Successfully... path=" << path << std::endl;
+            LOG(Log::info) << "Create New ZNode Successfully... path=" << path; 
         }
         else
         {
-            std::cerr << "Create New ZNode Failed... path=" << path << " flag=" << res << std::endl;
+            LOG(Log::error) << "Create New ZNode Failed... path=" << path << " flag=" << res; 
         }
     }
 }
@@ -112,7 +112,7 @@ std::string ZkClient::GetData(const char *path)
     }
     else
     {
-        std::cerr << "zoo_get err... path=" << path << " flag=" << res << std::endl;
+        LOG(Log::info) << "zoo_get err... path=" << path << " flag=" << res;
         return "";
     }
 }

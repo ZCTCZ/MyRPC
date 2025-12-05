@@ -26,11 +26,15 @@ protobuf_generate(
     PROTOS ${PROTO_FILES}
 )
 
+# 指定链接需要的库所在路径
+target_link_directories(rpc
+                            PUBLIC
+                                ${PROJECT_SOURCE_DIR}/thirdPart/lib/)
+
 # 指定链接需要的库
 target_link_libraries(rpc 
                         PUBLIC 
-                            muduo_net 
-                            muduo_base 
+                            my_reactor_net #自研的基于事件驱动的高性能网络库
                             protobuf::libprotobuf
                             zookeeper
                             hashtable
@@ -42,8 +46,9 @@ target_link_libraries(rpc
 target_include_directories(rpc 
                             PUBLIC 
                                 ${CMAKE_CURRENT_SOURCE_DIR}/include/
+                                ${CMAKE_SOURCE_DIR}/thirdPart/include/ #libmy_reactor_net.so需要的头文件
                             PRIVATE
-                                ${CMAKE_CURRENT_BINARY_DIR})
+                                ${CMAKE_CURRENT_BINARY_DIR}) 
 
 target_compile_definitions(rpc PRIVATE THREADED)
 
