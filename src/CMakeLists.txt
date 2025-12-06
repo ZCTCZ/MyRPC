@@ -5,7 +5,8 @@ add_library(rpc SHARED  RPCApplication.cpp
                         RPCConfig.cpp
                         RPCChannel.cpp
                         RPCController.cpp
-                        ZooKeeperUtil.cpp)
+                        ZooKeeperUtil.cpp
+                        ZkConnectionManager.cpp)
 
 # 指定 CMAKE_PREFIX_PATH 包含 protobuf 安装路径
 list(APPEND CMAKE_PREFIX_PATH "/usr/local")

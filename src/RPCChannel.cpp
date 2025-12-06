@@ -2,7 +2,7 @@
 #include "Header.pb.h"
 #include "Response.pb.h"
 #include "RPCApplication.h"
-#include "ZooKeeperUtil.h"
+#include "ZkConnectionManager.h"
 #include "Log.h"
 #include <string>
 #include <arpa/inet.h>
@@ -88,11 +88,12 @@ void RPCChannel::SendToServer(const std::string& serviceName, const std::string&
     auto del = [](int* p){ if(p) ::close(*p); };
     std::unique_ptr<int, decltype(del)> pfd(new int(fd), del);
 
+    // 获取 zookeeper 的单例连接管理器对象
+    ZkClient* zk = ZkConnectionManager::getInstance()->GetZkClient();
+
     // 从 zooKepper 的服务器上获取 RPC 框架服务端 RPCProvider 的IP和端口号
-    ZkClient zk; // 定义 zkClient 对象
-    zk.Start();  // 连接 zkServer 服务器
     std::string path("/" + serviceName + "/" + methodName); // 生成查找结点所在的路径: /serviceName/methodName
-    std::string data = zk.GetData(path.data()); // 查找指定路径结点的数据
+    std::string data = zk->GetData(path.data()); // 查找指定路径结点的数据
     if (data.empty()) // 指定路径的结点不存在，即未注册所指定的服务或者方法 
     {
         // 输出日志

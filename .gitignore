@@ -42,3 +42,6 @@
 
 build/*
 test/*
+.vscode/*
+*Log
+lib/*
