@@ -4,10 +4,11 @@
 #include "RPCApplication.h"
 #include "ZkConnectionManager.h"
 #include "Log.h"
+#include "RPCConnectionsPool.h"
 #include <string>
-#include <arpa/inet.h>
 #include <errno.h>
 #include <memory>
+#include <netinet/in.h>
 
 
 void RPCChannel::CallMethod(const google::protobuf::MethodDescriptor *method,
@@ -75,19 +76,6 @@ void RPCChannel::CallMethod(const google::protobuf::MethodDescriptor *method,
 // 目前是一对一通信
 void RPCChannel::SendToServer(const std::string& serviceName, const std::string& methodName, const std::string& sendStr, google::protobuf::Message *response, google::protobuf::RpcController *controller)
 {
-    int fd = socket(AF_INET, SOCK_STREAM, 0);
-    if (-1 == fd)
-    {
-        // 输出日志
-        LOG(Log::error) << "send() err";
-        controller->SetFailed("send() err");
-        return ;
-    }
-
-    // 使用智能指针(自定义删除器)管理通信套接字
-    auto del = [](int* p){ if(p) ::close(*p); };
-    std::unique_ptr<int, decltype(del)> pfd(new int(fd), del);
-
     // 获取 zookeeper 的单例连接管理器对象
     ZkClient* zk = ZkConnectionManager::getInstance()->GetZkClient();
 
@@ -116,23 +104,13 @@ void RPCChannel::SendToServer(const std::string& serviceName, const std::string&
     std::string ip(data.begin(), data.begin()+pos);
     std::string port(data.begin()+pos+1, data.end());
 
-    struct sockaddr_in servaddr;
-    servaddr.sin_family = AF_INET;
-    if (-1 == inet_pton(AF_INET, ip.data(), &servaddr.sin_addr.s_addr))
+    RPCConnectionsPool* pConnPool = RPCConnectionsPool::GetInstance();// 获取连接池单例对象
+    auto pConn = pConnPool->GetConnection(ip, stoi(port));// 获取连接
+    if (pConn == nullptr)
     {
-        // 输出日志
-        LOG(Log::error) << "inet_pton() err";
-        controller->SetFailed("inet_pton() err");
-        return ;
-    }
-    servaddr.sin_port = htons(stoi(port));
-
-    if (-1 == connect(fd, (struct sockaddr*)&servaddr, sizeof(servaddr)))
-    {
-        // 输出日志
-        LOG(Log::error) << "connect() err";
-        controller->SetFailed("connect() err");
-        return ;
+        LOG(Log::error) << "Failed to get connection from pool";
+        controller->SetFailed("Failed to get connection from pool");
+        return;
     }
 
     // 发送sendStr之前需要添加长度前缀
@@ -144,17 +122,17 @@ void RPCChannel::SendToServer(const std::string& serviceName, const std::string&
     str += sendStr;
 
     // 发送 str
-    if (-1 == send(fd, str.data(), str.size(), 0))
+    if (pConn->Send(str) == -1)
     {
-        // 输出日志
         LOG(Log::error) << "send() err";
         controller->SetFailed("send() err");
+        pConnPool->ReturnConnection(pConn);
         return ;
     }
 
     // 阻塞等待 RPCProvider 返回函数调用的结果
     char buf[65535] = {0};
-    ssize_t recvLen = recv(fd, buf, sizeof(buf), 0);
+    ssize_t recvLen = pConn->Recv(buf, sizeof(buf));
     if (-1 == recvLen)
     {
         // 输出日志
@@ -187,7 +165,10 @@ void RPCChannel::SendToServer(const std::string& serviceName, const std::string&
         }
         else
         {
+            LOG(Log::error) << "ParseFromString(" << recvStr << ") err";
             controller->SetFailed("ParseFromString() err");
         }
     }
+
+    pConnPool->ReturnConnection(pConn);
 }
