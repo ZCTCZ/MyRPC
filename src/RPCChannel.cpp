@@ -73,7 +73,6 @@ void RPCChannel::CallMethod(const google::protobuf::MethodDescriptor *method,
 }
 
 // 通过网络将sendStr发送给框架的服务端
-// 目前是一对一通信
 void RPCChannel::SendToServer(const std::string& serviceName, const std::string& methodName, const std::string& sendStr, google::protobuf::Message *response, google::protobuf::RpcController *controller)
 {
     // 获取 zookeeper 的单例连接管理器对象
